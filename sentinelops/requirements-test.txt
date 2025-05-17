@@ -1,0 +1,45 @@
+# Testing dependencies
+pytest==7.3.1
+pytest-cov==4.1.0
+pytest-mock==3.10.0
+pytest-asyncio==0.21.0
+pytest-env==0.8.1
+
+# HTTP client for testing API endpoints
+httpx==0.24.1
+requests-mock==1.10.0
+
+# Database
+# Using SQLite for testing (built into Python standard library)
+
+# API testing
+fastapi==0.95.2
+pydantic==1.10.8
+
+# Mocking
+responses==0.23.1
+
+# For JWT token handling in tests
+python-jose==3.3.0
+python-multipart==0.0.6
+
+# For email testing
+aiosmtpd==1.4.4
+
+# For Twilio testing
+twilio==8.1.0
+
+# For datetime handling
+python-dateutil==2.8.2
+
+# For JSON schema validation
+jsonschema==4.17.3
+
+# For test coverage reporting
+coverage==7.2.7
+
+# For parallel test execution
+pytest-xdist==3.3.1
+
+# For environment variable management
+python-dotenv==1.0.0

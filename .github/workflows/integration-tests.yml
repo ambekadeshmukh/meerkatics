@@ -1,0 +1,86 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_sentinelops
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-test.txt
+        
+    - name: Create test environment file
+      run: |
+        echo "TEST_DB_HOST=localhost" > .env.test
+        echo "TEST_DB_PORT=5432" >> .env.test
+        echo "TEST_DB_USER=postgres" >> .env.test
+        echo "TEST_DB_PASSWORD=postgres" >> .env.test
+        echo "TEST_DB_NAME=test_sentinelops" >> .env.test
+        echo "ALERT_EMAIL_ENABLED=true" >> .env.test
+        echo "ALERT_EMAIL_SMTP_SERVER=localhost" >> .env.test
+        echo "ALERT_EMAIL_SMTP_PORT=1025" >> .env.test
+        echo "ALERT_EMAIL_USERNAME=test@example.com" >> .env.test
+        echo "ALERT_EMAIL_PASSWORD=test_password" >> .env.test
+        echo "ALERT_EMAIL_FROM=alerts@sentinelops.com" >> .env.test
+        echo "ALERT_EMAIL_TO=admin@example.com" >> .env.test
+        echo "ALERT_EMAIL_USE_TLS=false" >> .env.test
+        echo "ALERT_SLACK_ENABLED=true" >> .env.test
+        echo "ALERT_SLACK_WEBHOOK_URL=https://hooks.slack.com/services/test/webhook" >> .env.test
+        echo "ALERT_SLACK_CHANNEL=#test-alerts" >> .env.test
+        echo "ALERT_WEBHOOK_ENABLED=true" >> .env.test
+        echo "ALERT_WEBHOOK_URL=https://example.com/webhook" >> .env.test
+        echo "ALERT_WEBHOOK_HEADERS={\"Content-Type\": \"application/json\"}" >> .env.test
+        echo "ALERT_WEBHOOK_METHOD=POST" >> .env.test
+        echo "ALERT_SMS_ENABLED=true" >> .env.test
+        echo "ALERT_SMS_TWILIO_ACCOUNT_SID=test_account_sid" >> .env.test
+        echo "ALERT_SMS_TWILIO_AUTH_TOKEN=test_auth_token" >> .env.test
+        echo "ALERT_SMS_FROM_NUMBER=+15555555555" >> .env.test
+        echo "ALERT_SMS_TO_NUMBERS=+16666666666" >> .env.test
+        echo "API_KEY_SECRET=test-api-key" >> .env.test
+        echo "JWT_SECRET_KEY=test-jwt-secret" >> .env.test
+        
+    - name: Run integration tests
+      run: |
+        cd sentinelops
+        pytest tests/integration -v
+        
+    - name: Run integration tests with coverage
+      run: |
+        cd sentinelops
+        pytest --cov=sentinelops tests/integration
+        
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./sentinelops/.coverage
+        fail_ci_if_error: false
