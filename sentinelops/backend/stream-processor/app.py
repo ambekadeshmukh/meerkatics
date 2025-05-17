@@ -4,8 +4,9 @@ import json
 import time
 import logging
 from typing import Dict, Any, List
-import psycopg2
-from psycopg2.extras import Json
+import sqlite3
+import os.path
+import json as json_lib
 from kafka import KafkaConsumer
 import minio
 import uuid
@@ -23,11 +24,7 @@ logger = logging.getLogger("stream-processor")
 # Configuration from environment variables
 KAFKA_BOOTSTRAP_SERVERS = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_TOPIC = os.environ.get("KAFKA_TOPIC", "llm-monitoring")
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "llmmonitor")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "llmmonitor")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "llmmonitor")
+SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "./sentinelops.db")
 MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
 MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")
 MINIO_SECRET_KEY = os.environ.get("MINIO_SECRET_KEY", "minioadmin")
@@ -70,17 +67,53 @@ class StreamProcessor:
         logger.info("Connected to Kafka")
         
     def connect_postgres(self):
-        """Connect to PostgreSQL database."""
-        logger.info(f"Connecting to PostgreSQL at {POSTGRES_HOST}:{POSTGRES_PORT}")
-        self.conn = psycopg2.connect(
-            host=POSTGRES_HOST,
-            port=POSTGRES_PORT,
-            user=POSTGRES_USER,
-            password=POSTGRES_PASSWORD,
-            dbname=POSTGRES_DB
-        )
+        """Connect to SQLite database."""
+        logger.info(f"Connecting to SQLite database at {SQLITE_DB_PATH}")
+        
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(SQLITE_DB_PATH), exist_ok=True)
+        
+        self.conn = sqlite3.connect(SQLITE_DB_PATH)
+        self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
-        logger.info("Connected to PostgreSQL")
+        
+        # Create tables if they don't exist
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS request_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            provider TEXT,
+            model TEXT,
+            application TEXT,
+            environment TEXT,
+            total_tokens INTEGER,
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            inference_time REAL,
+            cost REAL,
+            status TEXT,
+            error_message TEXT,
+            metadata TEXT
+        )
+        ''')
+        
+        self.cursor.execute('''
+        CREATE TABLE IF NOT EXISTS anomalies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            anomaly_type TEXT,
+            provider TEXT,
+            model TEXT,
+            application TEXT,
+            description TEXT,
+            severity TEXT
+        )
+        ''')
+        
+        self.conn.commit()
+        logger.info("Connected to SQLite database")
         
     def connect_minio(self):
         """Connect to MinIO object storage."""
@@ -179,10 +212,15 @@ class StreamProcessor:
             logger.error(f"Error processing event: {str(e)}", exc_info=True)
     
     def store_metrics(self, metrics: Dict[str, Any]):
-        """Store metrics in PostgreSQL."""
+        """Store metrics in SQLite database."""
         columns = list(metrics.keys())
         values = [metrics[col] for col in columns]
-        placeholders = ["%s"] * len(columns)
+        placeholders = ["?"] * len(columns)
+        
+        # Convert any complex objects to JSON strings
+        for i, val in enumerate(values):
+            if isinstance(val, dict) or isinstance(val, list):
+                values[i] = json_lib.dumps(val)
         
         query = f"""
         INSERT INTO request_metrics ({', '.join(columns)})
@@ -255,22 +293,24 @@ class StreamProcessor:
         for anomaly in anomalies:
             anomaly_id = str(uuid.uuid4())
             
+            # Convert anomaly to JSON string for storage
+            anomaly_json = json_lib.dumps(anomaly)
+            
             # Store anomaly in database
             self.cursor.execute(
                 """
                 INSERT INTO anomalies 
-                (anomaly_id, timestamp, type, request_id, provider, model, application, details)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                (request_id, anomaly_type, provider, model, application, description, severity)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    anomaly_id,
-                    metrics["timestamp"],
-                    anomaly["type"],
                     metrics["request_id"],
+                    anomaly["type"],
                     metrics["provider"],
                     metrics["model"],
                     metrics["application"],
-                    Json(anomaly)
+                    anomaly_json,
+                    "high" if anomaly["type"] == "error_rate_spike" else "medium"
                 )
             )
             self.conn.commit()

@@ -9,12 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import sqlite3
+import os.path
 import httpx
-from minio import Minio
 import pandas as pd
 import io
+import shutil
 
 # Configure logging
 logging.basicConfig(
@@ -25,16 +25,10 @@ logger = logging.getLogger("api-server")
 
 # Configuration from environment variables
 PORT = int(os.environ.get("PORT", "8000"))
-POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-POSTGRES_PORT = int(os.environ.get("POSTGRES_PORT", "5432"))
-POSTGRES_USER = os.environ.get("POSTGRES_USER", "llmmonitor")
-POSTGRES_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "llmmonitor")
-POSTGRES_DB = os.environ.get("POSTGRES_DB", "llmmonitor")
+SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "./sentinelops.db")
 PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://localhost:9090")
-MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
-MINIO_ACCESS_KEY = os.environ.get("MINIO_ACCESS_KEY", "minioadmin")
-MINIO_SECRET_KEY = os.environ.get("MINIO_SECRET_KEY", "minioadmin")
-MINIO_BUCKET = os.environ.get("MINIO_BUCKET", "llm-requests")
+# File storage configuration
+FILE_STORAGE_PATH = os.environ.get("FILE_STORAGE_PATH", "/data/storage")
 API_KEY_SECRET = os.environ.get("API_KEY_SECRET", "test-api-key")
 
 # Create FastAPI app
@@ -68,30 +62,66 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
 class Database:
     def __init__(self):
         self.conn = None
+        self.initialize_db()
+        
+    def initialize_db(self):
+        """Initialize the SQLite database if it doesn't exist"""
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(SQLITE_DB_PATH), exist_ok=True)
+        
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Create tables if they don't exist
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS request_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            provider TEXT,
+            model TEXT,
+            application TEXT,
+            environment TEXT,
+            total_tokens INTEGER,
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            inference_time REAL,
+            cost REAL,
+            status TEXT,
+            error_message TEXT
+        )
+        ''')
+        
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS anomalies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            anomaly_type TEXT,
+            provider TEXT,
+            model TEXT,
+            application TEXT,
+            description TEXT,
+            severity TEXT
+        )
+        ''')
+        
+        conn.commit()
         
     def get_connection(self):
-        if self.conn is None or self.conn.closed:
-            self.conn = psycopg2.connect(
-                host=POSTGRES_HOST,
-                port=POSTGRES_PORT,
-                user=POSTGRES_USER,
-                password=POSTGRES_PASSWORD,
-                dbname=POSTGRES_DB
-            )
+        if self.conn is None:
+            self.conn = sqlite3.connect(SQLITE_DB_PATH)
+            # This allows accessing columns by name
+            self.conn.row_factory = sqlite3.Row
         return self.conn
         
     def get_cursor(self):
-        return self.get_connection().cursor(cursor_factory=RealDictCursor)
+        return self.get_connection().cursor()
 
 db = Database()
 
-# MinIO client
-minio_client = Minio(
-    MINIO_ENDPOINT,
-    access_key=MINIO_ACCESS_KEY,
-    secret_key=MINIO_SECRET_KEY,
-    secure=False  # Set to True if using HTTPS
-)
+# Ensure storage directory exists
+os.makedirs(FILE_STORAGE_PATH, exist_ok=True)
 
 # Prometheus client
 async def query_prometheus(query: str) -> Dict:
@@ -150,8 +180,8 @@ async def health_check():
     try:
         # Check database connection
         conn = db.get_connection()
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT 1")
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
             
         # Check Prometheus connection
         async with httpx.AsyncClient() as client:
@@ -162,11 +192,11 @@ async def health_check():
                     content={"status": "unhealthy", "message": "Prometheus is not available"}
                 )
                 
-        # Check MinIO connection
-        if not minio_client.bucket_exists(MINIO_BUCKET):
+        # Check file storage directory
+        if not os.path.exists(FILE_STORAGE_PATH) or not os.access(FILE_STORAGE_PATH, os.W_OK):
             return JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={"status": "unhealthy", "message": "MinIO bucket not available"}
+                content={"status": "unhealthy", "message": "File storage directory not available or not writable"}
             )
             
         return {"status": "healthy"}

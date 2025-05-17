@@ -46,9 +46,9 @@ check_requirements() {
    
    # Check if Docker daemon is running
    if ! docker info &> /dev/null; then
-       echo -e "${RED}Docker daemon is not running. Please start Docker and try again.${NC}"
-       exit 1
-   }
+        echo -e "${RED}Docker daemon is not running. Please start Docker and try again.${NC}"
+        exit 1
+   fi
    
    echo -e "${GREEN}All requirements are met!${NC}"
 }
