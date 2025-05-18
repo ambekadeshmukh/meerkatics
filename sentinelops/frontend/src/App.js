@@ -5,23 +5,25 @@ import axios from 'axios';
 import './App.css';
 
 // Lazy load components
-const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
+const Dashboard = lazy(() => import('./components/Dashboard/DashboardSimple'));
+const Logo = lazy(() => import('./components/common/Logo'));
 const Requests = lazy(() => import('./components/Requests/RequestsList'));
 const RequestDetail = lazy(() => import('./components/Requests/RequestDetail'));
 const Anomalies = lazy(() => import('./components/Anomalies/AnomaliesList'));
 const AnomalyDetail = lazy(() => import('./components/Anomalies/AnomalyDetail'));
 const Analytics = lazy(() => import('./components/Analytics/AnalyticsPage'));
 const Settings = lazy(() => import('./components/Settings/Settings'));
+const AlertsPanel = lazy(() => import('./components/Alerts/AlertsPanel'));
 const NotFound = lazy(() => import('./components/common/NotFound'));
 const LoadingSpinner = lazy(() => import('./components/common/LoadingSpinner'));
 
 // API Configuration
-const API_URL = process.env.REACT_APP_API_URL;
-const API_KEY = process.env.REACT_APP_API_KEY;
+// For local development, always connect to localhost:8000
+const API_URL = 'http://localhost:8000';
+const API_KEY = 'test-api-key';
 
-if (!API_URL || !API_KEY) {
-  throw new Error('Missing required environment variables: REACT_APP_API_URL and REACT_APP_API_KEY must be set');
-}
+// Log API configuration for debugging
+console.log('Using API URL:', API_URL);
 
 // Create axios instance with retry logic
 const axiosInstance = axios.create({
@@ -57,7 +59,10 @@ function App() {
       <div className="app">
         <nav className="sidebar">
           <div className="logo">
-            <h1>LLM Monitor</h1>
+            <div className="logo-container">
+              <Logo size={60} />
+            </div>
+            <h1>SentinelOps</h1>
           </div>
           <ul className="nav-links">
             <li>
@@ -70,6 +75,9 @@ function App() {
               <Link to="/anomalies">Anomalies</Link>
             </li>
             <li>
+              <Link to="/alerts">Alerts</Link>
+            </li>
+            <li>
               <Link to="/analytics">Analytics</Link>
             </li>
             <li>
@@ -77,7 +85,7 @@ function App() {
             </li>
           </ul>
           <div className="nav-footer">
-            <p>LLM Monitoring v0.1.0</p>
+            <p>SentinelOps | v0.1.0</p>
           </div>
         </nav>
         
@@ -89,6 +97,7 @@ function App() {
               <Route path="/requests/:requestId" element={<RequestDetail />} />
               <Route path="/anomalies" element={<Anomalies />} />
               <Route path="/anomalies/:anomalyId" element={<AnomalyDetail />} />
+              <Route path="/alerts" element={<AlertsPanel />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/404" element={<NotFound />} />
