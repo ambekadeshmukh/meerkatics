@@ -1,8 +1,8 @@
 # SentinelOps
 
-<p align="center">
-  <img src="docs/images/SentinelOps logo.png" alt="SentinelOps Logo" width="200"/>
-</p>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/f155b7dc-32b3-47be-9889-f959888cb24b" alt="Sentinel-Logo-color-2" />
+</div>
 
 <p align="center">
   <strong>Full observability for AI/LLM systems.</strong><br>
@@ -192,9 +192,8 @@ SentinelOps provides actionable insights for your AI systems:
 
 ## Dashboard Preview
 
-<p align="center">
-  <img src="docs/images/dashboard-preview.png" alt="SentinelOps Dashboard" width="800"/>
-</p>
+<img width="1792" alt="MainDashboard" src="https://github.com/user-attachments/assets/4cffb057-cf8b-47bd-b97f-d0a90e943c54" />
+
 
 ## Contributing
 
