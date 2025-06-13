@@ -1,4 +1,4 @@
-# SentinelOps
+# Meerkatics
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/f155b7dc-32b3-47be-9889-f959888cb24b" alt="Sentinel-Logo-color-2" />
