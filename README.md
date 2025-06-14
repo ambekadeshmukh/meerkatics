@@ -1,7 +1,7 @@
 # Meerkatics
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/f155b7dc-32b3-47be-9889-f959888cb24b" alt="Sentinel-Logo-color-2" />
+  <img src="https://github.com/user-attachments/assets/e9fad507-81ed-4ae4-b7ae-024dfb8403e0" alt="meerkatics-logo" width="300"/>
 </div>
 
 <p align="center">
