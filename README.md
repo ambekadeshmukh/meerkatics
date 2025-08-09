@@ -21,9 +21,9 @@
 
 ---
 
-## AI Systems are Black Boxes. SentinelOps gives you full visibility.
+## AI Systems are Black Boxes. Meerkatics gives you full visibility.
 
-AI is taking over the world — but who is watching the AI itself? SentinelOps gives you deep visibility into LLMs and AI Agents: track inference times, memory usage, request success/failure, token costs, and more. Designed for developers, DevOps engineers, and AI teams who want their models to be fast, reliable, and cost-efficient.
+AI is taking over the world — but who is watching the AI itself? Meerkatics gives you deep visibility into LLMs and AI Agents: track inference times, memory usage, request success/failure, token costs, and more. Designed for developers, DevOps engineers, and AI teams who want their models to be fast, reliable, and cost-efficient.
 
 - 🚀 **Lightweight agent** - Minimal performance impact
 - 📊 **Beautiful Grafana dashboards** - Immediate insights
@@ -61,10 +61,10 @@ AI is taking over the world — but who is watching the AI itself? SentinelOps g
 
 ```python
 # Install the SDK
-pip install sentinelops
+pip install meerkatics
 
 # Monitor OpenAI requests
-from sentinelops import OpenAIMonitor
+from meerkatics import OpenAIMonitor
 
 # Initialize the monitor
 monitor = OpenAIMonitor(
@@ -91,7 +91,7 @@ print(response["choices"][0]["message"]["content"])
 ### SDK Installation
 
 ```bash
-pip install sentinelops
+pip install meerkatics
 ```
 
 ### Infrastructure Deployment
@@ -99,19 +99,19 @@ pip install sentinelops
 #### Using Docker Compose (for local development)
 
 ```bash
-git clone https://github.com/yourusername/sentinelops.git
-cd sentinelops/infrastructure
+git clone https://github.com/yourusername/meerkatics.git
+cd meerkatics/infrastructure
 docker-compose up -d
 ```
 
 #### Using Kubernetes (for production)
 
 ```bash
-# Add the SentinelOps Helm repository
-helm repo add sentinelops https://charts.sentinelops.com
+# Add the meerkatics Helm repository
+helm repo add meerkatics https://charts.meerkatics.com
 
-# Install SentinelOps
-helm install sentinelops sentinelops/sentinelops \
+# Install meerkatics
+helm install meerkatics meerkatics/meerkatics \
   --namespace monitoring \
   --create-namespace
 ```
@@ -131,7 +131,7 @@ helm install sentinelops sentinelops/sentinelops \
 ### Basic Monitoring
 
 ```python
-from sentinelops import AnthropicMonitor
+from meerkatics import AnthropicMonitor
 
 monitor = AnthropicMonitor(
     api_key="your-anthropic-key",
@@ -148,7 +148,7 @@ response = monitor.completion(
 ### Framework Integration
 
 ```python
-from sentinelops import OpenAIMonitor
+from meerkatics import OpenAIMonitor
 from langchain.llms import OpenAI
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
@@ -182,7 +182,7 @@ More examples can be found in the [examples](examples/) directory.
 
 ## Key Performance Insights
 
-SentinelOps provides actionable insights for your AI systems:
+meerkatics provides actionable insights for your AI systems:
 
 - **Cost Optimization**: Identify expensive prompts and inefficient patterns
 - **Performance Bottlenecks**: Pinpoint slow queries and optimize response times
@@ -197,14 +197,14 @@ SentinelOps provides actionable insights for your AI systems:
 
 ## Contributing
 
-We welcome contributions to SentinelOps! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
+We welcome contributions to meerkatics! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
 
 ### Development Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/sentinelops.git
-cd sentinelops
+git clone https://github.com/yourusername/meerkatics.git
+cd meerkatics
 
 # Set up a virtual environment
 python -m venv venv
@@ -223,9 +223,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Support
 
-- [GitHub Issues](https://github.com/yourusername/sentinelops/issues): Bug reports and feature requests
-- [Documentation](https://docs.sentinelops.com): Comprehensive guides and API reference
-- [Discord Community](https://discord.gg/sentinelops): Join our community for help and discussions
+- [GitHub Issues](https://github.com/yourusername/meerkatics/issues): Bug reports and feature requests
+- [Documentation](https://docs.meerkatics.com): Comprehensive guides and API reference
+- [Discord Community](https://discord.gg/meerkatics): Join our community for help and discussions
 
 ---
 
