@@ -167,39 +167,3 @@ def get_rbac_service(db: Session = Depends(get_db)) -> RBACService:
 
 def get_auth_middleware(db: Session = Depends(get_db)) -> AuthMiddleware:
     return AuthMiddleware(db)
-
-# ========================================
-# AUTHENTICATION ROUTES
-# ========================================
-
-auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
-
-@auth_router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    user_data: UserRegistration,
-    auth_service: AuthService = Depends(get_auth_service)
-):
-    """Register a new user"""
-    try:
-        user = auth_service.create_user(
-            email=user_data.email,
-            password=user_data.password,
-            first_name=user_data.first_name,
-            last_name=user_data.last_name,
-            organization_name=user_data.organization_name
-        )
-        
-        return UserResponse(
-            id=user.id,
-            email=user.email,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            full_name=user.full_name,
-            is_verified=user.is_verified,
-            last_login=user.last_login,
-            created_at=user.created_at,
-            organizations=[
-                {
-                    "id": org.id,
-                    "name": org.name,
-                    "slug": org.slug,
