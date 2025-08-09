@@ -15,8 +15,8 @@ from datetime import datetime, timedelta
 import threading
 
 # Import our processors
-from .processors.advanced_anomaly_detector import AdvancedAnomalyDetector
-from .processors.hallucination_detector import HallucinationDetector
+from processors.advanced_anomaly_detector import AdvancedAnomalyDetector
+from processors.hallucination_detector import HallucinationDetector
 
 # Configure logging
 logging.basicConfig(
